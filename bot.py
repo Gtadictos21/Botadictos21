@@ -6,8 +6,7 @@ import random
 import json
 import time
 import pytz
-import psutil 
-import urllib.request
+import psutil
 import hikari
 import lightbulb
 

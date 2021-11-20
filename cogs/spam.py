@@ -1,8 +1,6 @@
 import hikari
 import lightbulb
-import json
 import asyncio
-import motor.motor_asyncio
 
 from bot import MongoDB_URL
 from bot import bot_operators
@@ -11,7 +9,6 @@ from bot import guild_id
 
 from colorama import Fore 
 from colorama import Style
-from lightbulb import commands
 from datetime import datetime
 
 plugin = lightbulb.Plugin("Spam")
