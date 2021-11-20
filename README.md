@@ -1,4 +1,4 @@
-# Botadictos21 (Beta Testing):
+# ![Bot-logo](https://user-images.githubusercontent.com/83682754/142743615-fbe1fc17-3015-4b1f-974b-34eb35e67a67.png) Botadictos21 (Beta Testing):
 
 ### Bot creado por [Gtadictos21](https://github.com/Gtadictos21) y [Galo](https://github.com/Galo223344) para el servidor de Discord: [El Club De Los 21's](https://gtadictos21.com/discord)
 
