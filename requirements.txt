@@ -1,5 +1,6 @@
 hikari==2.0.0.dev103
 hikari-lightbulb==2.0.0
+uvloop==0.16.0
 psutil==5.8.0
 colorama==0.4.4
 uptime==3.0.1

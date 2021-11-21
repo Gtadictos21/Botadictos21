@@ -9,13 +9,15 @@ Este bot se beneficia de [Hikari] y [Lightbulb], dos librerias que se encuentran
 ## Instalar dependencias:
 ¡Este bot requiere [Python versión: 3.9.x](https://phoenixnap.com/kb/how-to-install-python-3-ubuntu), y pip!
 
-```
-pip install -r requirements.txt
+```bash
+$ pip install -r requirements.txt
 ```
 ## Iniciar el bot:
 
-```
-python3 -OO -m main
+```bash
+$ python3 -OO -m main
+
+# El parametro -OO optimiza el inicio del bot
 ```
 
 ## Configuraciones:
@@ -47,4 +49,4 @@ python3 -OO -m main
 
 **Eres libre de copiar, modificar y hacer lo que quieras con este código, siempre y cuando, no sea malicioso.**
 
-_Ultima actualización: 20/11/2021 por: Julián M. (Gtadictos21)_
+_Ultima actualización: 21/11/2021 por: Julián M. (Gtadictos21)_
