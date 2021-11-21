@@ -1,10 +1,10 @@
-# Botadictos21:
+# ![Bot-logo](https://user-images.githubusercontent.com/83682754/142743615-fbe1fc17-3015-4b1f-974b-34eb35e67a67.png) Botadictos21 (Beta Testing):
 
 ### Bot creado por [Gtadictos21](https://github.com/Gtadictos21) y [Galo](https://github.com/Galo223344) para el servidor de Discord: [El Club De Los 21's](https://gtadictos21.com/discord)
 
 Estado del proyecto: [En desarollo](https://discord.gg/XEVxMVWHTE) - Fecha final estipulada: Enero 2022
 
-Este bot se beneficia de [Hikari] y [Lightbulb], dos librerias que se encuentran en constante crecimiento.
+Este bot se beneficia de [Hikari](https://www.hikari-py.dev/) y [Lightbulb](https://hikari-lightbulb.readthedocs.io/en/latest/), dos librerias que se encuentran en constante crecimiento.
 
 ## Instalar dependencias:
 ¡Este bot requiere [Python versión: 3.9.x](https://phoenixnap.com/kb/how-to-install-python-3-ubuntu), y pip!
@@ -12,6 +12,9 @@ Este bot se beneficia de [Hikari] y [Lightbulb], dos librerias que se encuentran
 ```bash
 $ pip install -r requirements.txt
 ```
+
+**Ademas, es necesario contar con una base de datos MongoDB para poder utilizar muchas de las funciones del bot. Puedes obtener una base de datos gratuita [aquí](https://www.mongodb.com/es/cloud/atlas/register).**
+
 ## Iniciar el bot:
 
 ```bash
@@ -22,7 +25,7 @@ $ python3 -OO -m main
 
 ## Configuraciones:
 
-1. Abrir archivo "config.json" y agregar el token, el ID de la guild, los IDs de los canales y opcionalmente, una API key de HetrixTools.
+1. Abrir archivo **"config.json"** y agregar el token de Discord, el ID de la guild, los IDs de los canales y opcionalmente, una API key de [HetrixTools](https://hetrixtools.com/).
 3. Cambiar los emojis customizados por los tuyos o unos no customizados en los cogs.
 4. Agregar tu propia clave API de youtube en **YTconfig.yml** (Las instrucciónes para conseguír esta clave están en el [repositorio original](https://github.com/Amethyst93/Discord-YouTube-Notifier), o simplemente podés borrar todo lo relacionado a YouTube.)
 5. Utilizando los comandos "/sugchannel", "/logchannel", "/gvchannel" e "/init" deberás configurar tu servidor.
@@ -31,7 +34,7 @@ $ python3 -OO -m main
 - [x] ~~Añadir MongoDB (Base de datos principal)~~
 - [ ] Añadir mas cogs (Misc, Spam, Moderación, YT, Levels, Reminder, Welcome, Reacción, Temp, Logs)
 - [ ] Añadir funciones extras
-- [ ] Añadir archivo de Systemd (Para iniciar el bot automaticamente)
+- [ ] Añadir Dockerfile y Docker-Compose.yml para poder dockerizar el bot
 - [ ] Crear un dashboard web para revisar los niveles (PHP, HTML & CSS)
 - Y mas...
 
