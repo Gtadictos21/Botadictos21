@@ -2,7 +2,6 @@ import hikari
 import lightbulb
 import asyncio
 
-from bot import MongoDB_URL
 from bot import bot_operators
 from bot import logchannel
 from bot import guild_id
