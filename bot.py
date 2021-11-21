@@ -441,7 +441,7 @@ async def reload(ctx):
         hikari.Embed(
             title="¡Vaya! Esto es incomodo...",
             description="Este mensaje no deberia haber aparecido, por favor, reportalo.",
-            colour=hikari.Colour(0x2bff00),
+            colour=hikari.Colour(0xff0000),
         )
         .set_footer(
             text=f"Pedido por: {ctx.member.display_name}",
