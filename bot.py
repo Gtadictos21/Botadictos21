@@ -290,7 +290,7 @@ async def add(ctx):
 ############################################
 
 @bot.command
-@lightbulb.option("extension", "¡Selecciona la extension a cargar!", hikari.OptionType.STRING, modifier = commands.OptionModifier.CONSUME_REST)
+@lightbulb.option("extension", "¡Selecciona la extension a cargar!", hikari.OptionType.STRING, modifier = commands.OptionModifier.CONSUME_REST, choices=["misc", "spam"])
 @lightbulb.command("load", description="¡Carga una extension!")
 @lightbulb.implements(commands.SlashCommand)
 async def load(ctx):
@@ -362,7 +362,7 @@ async def load(ctx):
     await channel.send(embed=embed)
 
 @bot.command
-@lightbulb.option("extension", "¡Selecciona la extension a cargar!", hikari.OptionType.STRING, modifier = commands.OptionModifier.CONSUME_REST)
+@lightbulb.option("extension", "¡Selecciona la extension a cargar!", hikari.OptionType.STRING, modifier = commands.OptionModifier.CONSUME_REST, choices=["misc", "spam"])
 @lightbulb.command("unload", description="¡Descarga una extension!")
 @lightbulb.implements(commands.SlashCommand)
 async def unload(ctx):
@@ -434,12 +434,27 @@ async def unload(ctx):
 
     await channel.send(embed=embed)
 
-@bot.command
-@lightbulb.option("all", "¡Recarga todas las extensiones!", hikari.OptionType.STRING, modifier = commands.OptionModifier.CONSUME_REST, choices=["all"], required = False)
-@lightbulb.option("extension", "¡Selecciona la extension a recargar!", hikari.OptionType.STRING, modifier = commands.OptionModifier.CONSUME_REST, required = False)
-@lightbulb.command("reload", description="¡Recarga una extension!")
-@lightbulb.implements(commands.SlashCommand)
+@lightbulb.command("reload", "¡Recarga una extension!")
+@lightbulb.implements(commands.SlashCommandGroup)
 async def reload(ctx):
+    embed =(
+        hikari.Embed(
+            title="¡Vaya! Esto es incomodo...",
+            description="Este mensaje no deberia haber aparecido, por favor, reportalo.",
+            colour=hikari.Colour(0x2bff00),
+        )
+        .set_footer(
+            text=f"Pedido por: {ctx.member.display_name}",
+            icon=ctx.member.avatar_url,
+        )
+    )
+
+    await ctx.respond(embed, flags=hikari.MessageFlag.EPHEMERAL)
+
+@reload.child
+@lightbulb.command("all", "¡Recarga todas las extensiones!")
+@lightbulb.implements(commands.SlashSubCommand)
+async def reload_all(ctx):
     if ctx.author.id not in bot_operators:
 
         embed = (
@@ -457,12 +472,15 @@ async def reload(ctx):
         await ctx.respond(embed, flags=hikari.MessageFlag.EPHEMERAL)
         return
     
-    if ctx.options.extension == None and ctx.options.all == None:
-
+    try:
+        for filename in os.listdir('./cogs'):
+            if filename.endswith('.py'):
+                bot.reload_extensions(f"cogs.{filename[:-3]}")
+    except Exception as err:
         embed = (
             hikari.Embed(
-                title="¡Argumento invalido!",
-                description="Debes especificar la extensión que deseas recargar",
+                title="¡Ha ocurrido un error!",
+                description=err,
                 colour=hikari.Colour(0xff0000),
             )
             .set_footer(
@@ -474,35 +492,51 @@ async def reload(ctx):
         await ctx.respond(embed, flags=hikari.MessageFlag.EPHEMERAL)
         return
 
-    if ctx.options.all:
+    print(f'{Fore.RED}[BOT INFO]{Fore.WHITE}¡Todos los cogs han sido recargados!{Style.RESET_ALL}')
 
-        try:
-            for filename in os.listdir('./cogs'):
-                if filename.endswith('.py'):
-                    bot.reload_extensions(f"cogs.{filename[:-3]}")
-        except Exception as err:
-            embed = (
-                hikari.Embed(
-                    title="¡Ha ocurrido un error!",
-                    description=err,
-                    colour=hikari.Colour(0xff0000),
-                )
-                .set_footer(
-                    text=f"Pedido por: {ctx.member.display_name}",
-                    icon=ctx.member.avatar_url,
-                )
-            )
+    embed = (
+        hikari.Embed(
+            title=f"¡Todas las extensiones han sido recargadas!",
+            description="",
+            colour=hikari.Colour(0x2bff00),
+        )
+        .set_footer(
+            text=f"Pedido por: {ctx.member.display_name}",
+            icon=ctx.member.avatar_url,
+        )
+    )
 
-            await ctx.respond(embed, flags=hikari.MessageFlag.EPHEMERAL)
-            return
+    await ctx.respond(embed)
 
-        print(f'{Fore.RED}[BOT INFO]{Fore.WHITE}¡Todos los cogs han sido recargados!{Style.RESET_ALL}')
+    channel = ctx.bot.cache.get_guild_channel(logchannel)
+    embed = (
+        hikari.Embed(
+            title="Un operador ha recargado todas las extensiones",
+            description=f"El operador {ctx.author.mention} ha recargado todas las extensiones",
+            colour=hikari.Colour(0xff6600),
+            timestamp=datetime.now().astimezone(),
+        )
+        .set_footer(
+            text=f"ID del usuario: {ctx.author.id}",
+            icon=ctx.author.avatar_url,
+        )
+        .set_thumbnail(ctx.author.avatar_url)
+    )
+
+    await channel.send(embed=embed)
+
+@reload.child
+@lightbulb.option("extension", "¡Selecciona la extensión a recargar!", choices=["misc", "spam"])
+@lightbulb.command("one", "¡Recarga una extensión!")
+@lightbulb.implements(commands.SlashSubCommand)
+async def reload_one(ctx):
+    if ctx.author.id not in bot_operators:
 
         embed = (
             hikari.Embed(
-                title=f"¡Todas las extensiones han sido recargadas!",
-                description="",
-                colour=hikari.Colour(0x2bff00),
+                title="¡No tienes permisos para utilizar este comando!",
+                description="Necesitas contar con el permiso `BOT_OPERATOR`",
+                colour=hikari.Colour(0xff0000),
             )
             .set_footer(
                 text=f"Pedido por: {ctx.member.display_name}",
@@ -510,51 +544,17 @@ async def reload(ctx):
             )
         )
 
-        await ctx.respond(embed)
-
-        channel = ctx.bot.cache.get_guild_channel(logchannel)
-        embed = (
-            hikari.Embed(
-                title="Un operador ha recargado todas las extensiones",
-                description=f"El operador {ctx.author.mention} ha recargado todas las extensiones",
-                colour=hikari.Colour(0xff6600),
-                timestamp=datetime.now().astimezone(),
-            )
-            .set_footer(
-                text=f"ID del usuario: {ctx.author.id}",
-                icon=ctx.author.avatar_url,
-            )
-            .set_thumbnail(ctx.author.avatar_url)
-        )
-
-        await channel.send(embed=embed)
+        await ctx.respond(embed, flags=hikari.MessageFlag.EPHEMERAL)
+        return
     
-    else:
-        try:
-            bot.reload_extensions(f"cogs.{ctx.options.extension}")
-        except Exception as err:
-            embed = (
-                hikari.Embed(
-                    title="¡Ha ocurrido un error!",
-                    description=err,
-                    colour=hikari.Colour(0xff0000),
-                )
-                .set_footer(
-                    text=f"Pedido por: {ctx.member.display_name}",
-                    icon=ctx.member.avatar_url,
-                )
-            )
-
-            await ctx.respond(embed, flags=hikari.MessageFlag.EPHEMERAL)
-            return
-
-        print(f'{Fore.RED}[BOT INFO]{Fore.WHITE}¡El cog \"{ctx.options.extension}\" se ha recargado!{Style.RESET_ALL}')
-
+    try:
+        bot.reload_extensions(f"cogs.{ctx.options.extension}")
+    except Exception as err:
         embed = (
             hikari.Embed(
-                title=f"¡El cog \"{ctx.options.extension}\" se ha recargado!",
-                description="",
-                colour=hikari.Colour(0x2bff00),
+                title="¡Ha ocurrido un error!",
+                description=err,
+                colour=hikari.Colour(0xff0000),
             )
             .set_footer(
                 text=f"Pedido por: {ctx.member.display_name}",
@@ -562,21 +562,40 @@ async def reload(ctx):
             )
         )
 
-        await ctx.respond(embed)
+        await ctx.respond(embed, flags=hikari.MessageFlag.EPHEMERAL)
+        return
 
-        channel = ctx.bot.cache.get_guild_channel(logchannel)
-        embed = (
-            hikari.Embed(
-                title="Un operador ha recargado una extensión:",
-                description=f"El operador {ctx.author.mention} ha recargado el cog **{ctx.options.extension}**",
-                colour=hikari.Colour(0xff6600),
-                timestamp=datetime.now().astimezone(),
-            )
-            .set_footer(
-                text=f"ID del usuario: {ctx.author.id}",
-                icon=ctx.author.avatar_url,
-            )
-            .set_thumbnail(ctx.author.avatar_url)
+    print(f'{Fore.RED}[BOT INFO]{Fore.WHITE}¡El cog \"{ctx.options.extension}\" se ha recargado!{Style.RESET_ALL}')
+
+    embed = (
+        hikari.Embed(
+            title=f"¡El cog \"{ctx.options.extension}\" se ha recargado!",
+            description="",
+            colour=hikari.Colour(0x2bff00),
         )
+        .set_footer(
+            text=f"Pedido por: {ctx.member.display_name}",
+            icon=ctx.member.avatar_url,
+        )
+    )
 
-        await channel.send(embed=embed)
+    await ctx.respond(embed)
+
+    channel = ctx.bot.cache.get_guild_channel(logchannel)
+    embed = (
+        hikari.Embed(
+            title="Un operador ha recargado una extensión:",
+            description=f"El operador {ctx.author.mention} ha recargado el cog **{ctx.options.extension}**",
+            colour=hikari.Colour(0xff6600),
+            timestamp=datetime.now().astimezone(),
+        )
+        .set_footer(
+            text=f"ID del usuario: {ctx.author.id}",
+            icon=ctx.author.avatar_url,
+        )
+        .set_thumbnail(ctx.author.avatar_url)
+    )
+
+    await channel.send(embed=embed)
+
+bot.command(reload)
