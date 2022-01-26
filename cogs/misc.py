@@ -3,20 +3,91 @@ import lightbulb
 import psutil
 import math
 import random
+import re
 
 from bot import bot_operators
 from bot import logchannel
 from bot import sugchannel
 from bot import hetrix_token
+from bot import partidas_channel
 
 from uptime import uptime
 from lightbulb import commands
 from datetime import datetime, date
+from hikari.impl import ActionRowBuilder
 
 plugin = lightbulb.Plugin("Misc")
 
+# PARTIDAS COMMAND
 @plugin.command
-@lightbulb.command("redes", description="¡Visita el canal de YouTube de Gtadictos21!")
+@lightbulb.option("link", "Escribe el link de la partida, para que Gtadictos21 pueda revisarla", hikari.OptionType.STRING,  modifier=commands.OptionModifier.CONSUME_REST)
+@lightbulb.option("rango", "Escribe tu rango en el CS:GO", hikari.OptionType.STRING,  modifier=commands.OptionModifier.CONSUME_REST)
+@lightbulb.option("horas", "Escribe la cantidad de horas que tienes jugando al CS:GO", hikari.OptionType.STRING,  modifier=commands.OptionModifier.CONSUME_REST)
+@lightbulb.command("partidas", description="¿Quieres que Gtadictos21 analice una partida tuya? ¡Este es tu comando!", auto_defer=True)
+@lightbulb.implements(commands.SlashCommand)
+async def partidas(ctx):
+
+    # Checkeamos si el link es real
+    list_servicios = ["https://youtube.com", "https://drive.google.com", "https://mediafire.com", "https://mega.nz", "https://mega.io", "https://cdn.discordapp.com"]
+    link = ctx.options.link
+    x = re.findall(r"(?=("+'|'.join(list_servicios)+r"))", link)
+    if x == []:
+        embed = (
+            hikari.Embed(
+                title="¡El link no es valido!",
+                description="Recuerda que puedes utilizar los siguientes servicios para enviar tu partida: \n\n" + '\n'.join(list_servicios),
+                colour=hikari.Colour(0xff0000),
+            )
+            .set_footer(
+                text=f"Pedido por: {ctx.member.display_name}",
+                icon=ctx.member.avatar_url,
+            )
+        )
+        await ctx.respond(embed, flags=hikari.MessageFlag.EPHEMERAL)
+        return
+    
+    embed = (
+        hikari.Embed(
+            title="¡Muchas gracias por enviar tu partida!",
+            description="Gtadictos21 analizará tu partida en el proximo video. Recuerda que aquellos que sean [miembros](https://gtadictos21.com/miembros), tienen prioridad.",
+            colour=hikari.Colour(0x00ff00),
+        )
+        .set_footer(
+            text=f"Pedido por: {ctx.member.display_name}",
+            icon=ctx.member.avatar_url,
+        )
+    )
+    await ctx.respond(embed, flags=hikari.MessageFlag.EPHEMERAL)
+
+    channel = ctx.bot.cache.get_guild_channel(partidas_channel)
+    embed = (
+        hikari.Embed(
+            title=f"¡El usuario {ctx.member.display_name} ha subido su partida!",
+            colour=hikari.Colour(0xff6600),
+        )
+        .add_field(
+            name="Link:", 
+            value=link,
+            inline=False,
+        )
+        .add_field(
+            name="Rango actual:",
+            value=ctx.options.rango,
+            inline=True,
+        )
+        .add_field(
+            name="Horas jugadas:",
+            value=ctx.options.horas,
+            inline=True,
+        )
+        .set_thumbnail(ctx.member.avatar_url)
+    )
+
+    await channel.send(embed)
+
+# REDES COMMAND
+@plugin.command
+@lightbulb.command("redes", description="¡Visita el canal de YouTube de Gtadictos21!", auto_defer=True)
 @lightbulb.implements(commands.SlashCommand)
 async def redes(ctx):
     embed = (
@@ -48,43 +119,9 @@ async def redes(ctx):
 
     await ctx.respond(embed)
 
+# MIEMBRO COMMAND
 @plugin.command
-@lightbulb.command("navidad", description="¿Cuantos dias quedan para que sea navidad?")
-@lightbulb.implements(commands.SlashCommand)
-async def navidad(ctx):
-
-    christmas_year = date.today().year
-    christmas = date(christmas_year,12,25)
-    if date.today() > christmas:
-        christmas_year += 1
-        christmas = date(christmas_year,12,25)
-    days = (christmas-date.today()).days
-
-    if days == 0:
-        title = "¡Jo jo jo! Feliz navidad"
-        description = "¡Hoy es navidad, ve y disfruta de este dia!"
-        colour = 0xFF0000
-    else:
-        title = "¡Aún no es navidad... pero falta poco!"
-        description = f"Faltan {days} dias para que comience la navidad"
-        colour = 0x3B9DFF
-        
-    embed = (
-        hikari.Embed(
-            title=title,
-            description=description,
-            colour=hikari.Colour(colour),
-        )
-        .set_footer(
-            text=f"Pedido por: {ctx.member.display_name}",
-            icon=ctx.member.avatar_url,
-        )
-    )
-
-    await ctx.respond(embed)
-
-@plugin.command
-@lightbulb.command("miembro", description="¿Eres miembro del canal? ¡Conecta tu cuenta!")
+@lightbulb.command("miembro", description="¿Eres miembro del canal? ¡Conecta tu cuenta!", auto_defer=True)
 @lightbulb.implements(commands.SlashCommand)
 async def miembro(ctx):
     embed = (
@@ -109,12 +146,14 @@ async def miembro(ctx):
 
     await ctx.respond(embed)
 
+# STATUS COMMAND
 @plugin.command
-@lightbulb.command("status", description="¡Muestra el estado de los servicios!")
+@lightbulb.command("status", description="¡Muestra el estado de los servicios!", auto_defer=True)
 @lightbulb.implements(commands.SlashCommand)
 async def status(ctx):
+
     # Bot Musica
-    async with ctx.bot.d.aio_session.get(f"https://api.hetrixtools.com/v1/{hetrix_token}/server/stats/878dfc260790cf9cd6482182c5ecc033/") as res:
+    async with ctx.bot.d.aio_session.get(f"https://api.hetrixtools.com/v1/{hetrix_token}/server/stats//") as res:
         data = await res.json()
         java = data['Services'][0]['Status']
         python = data['Services'][1]['Status']
@@ -129,7 +168,7 @@ async def status(ctx):
             uptime_bot = 0
     
     # Website
-    async with ctx.bot.d.aio_session.get(f"https://api.hetrixtools.com/v1/{hetrix_token}/server/stats/cce9c6ae3d3b8f1f655f1cd44f33f0f0/") as res:
+    async with ctx.bot.d.aio_session.get(f"https://api.hetrixtools.com/v1/{hetrix_token}/server/stats//") as res:
         data = await res.json()
         try:
             nginx = data['Services'][0]['Status']
@@ -147,7 +186,7 @@ async def status(ctx):
         embed = (
             hikari.Embed(
                 title="Estado de los servicios:",
-                description="¡Puedes revisar mas haciendo [click aquí](https://status.gtadictos21.com)!",
+                description="¡Puedes revisar mas haciendo [click aquí](https://status.gtadictos21.net)!",
                 colour=hikari.Colour(0x3B9DFF),
             )
             .add_field(name="Estado del bot de musica:",
@@ -166,8 +205,9 @@ async def status(ctx):
 
         await ctx.respond(embed)
 
+# INVITACION COMMAND
 @plugin.command
-@lightbulb.command("invitacion", description="¡Invita a un amigo al servidor!")
+@lightbulb.command("invitacion", description="¡Invita a un amigo al servidor!", auto_defer=True)
 @lightbulb.implements(commands.SlashCommand)
 async def invitacion(ctx):
     embed = (
@@ -182,10 +222,12 @@ async def invitacion(ctx):
         )
     )
 
-    await ctx.respond(embed)
+    row = ctx.bot.rest.build_action_row()
+    await ctx.respond(embed, component=row.add_button(hikari.ButtonStyle.LINK, "https://Gtadictos21.com/discord").set_label("¡Haz click aquí!").add_to_container())
 
+# HOST COMMAND
 @plugin.command
-@lightbulb.command("host", description="¿Quieres saber donde está hosteado el bot?")
+@lightbulb.command("host", description="¿Quieres saber donde está hosteado el bot?", auto_defer=True)
 @lightbulb.implements(commands.SlashCommand)
 async def host(ctx):
     embed = (
@@ -207,10 +249,12 @@ async def host(ctx):
         )
     )
 
-    await ctx.respond(embed)
+    row = ctx.bot.rest.build_action_row()
+    await ctx.respond(embed, component=row.add_button(hikari.ButtonStyle.LINK, "https://Gtadictos21.com/sparkedhost").set_label("Sparked Host ⚡").add_to_container())
 
+# NOPRUEBESESTECOMANDO COMMAND
 @plugin.command
-@lightbulb.command("nopruebesestecomando", description="¡No pruebes este comando!")
+@lightbulb.command("nopruebesestecomando", description="¡No pruebes este comando!", auto_defer=True)
 @lightbulb.implements(commands.SlashCommand)
 async def nopruebesestecomando(ctx):
     if ctx.author.id in bot_operators:
@@ -232,7 +276,7 @@ async def nopruebesestecomando(ctx):
     embed = (
         hikari.Embed(
             title="¡Has sido troleado!",
-            description="Puedes unirte [presionando aquí](https://Gtadictos21.com/discord).",
+            description="Puedes unirte [presionando aquí](https://Gtadictos21.com/discord), o usando el botón de abajo.",
             colour=hikari.Colour(0x3B9DFF),
         )
         .set_footer(
@@ -240,8 +284,10 @@ async def nopruebesestecomando(ctx):
             icon=ctx.bot.get_me().avatar_url,
         )
     )
-    await ctx.author.send(embed)
-    await ctx.get_guild().kick(ctx.author)
+    row = ctx.bot.rest.build_action_row()
+    await ctx.respond(embed, component=row.add_button(hikari.ButtonStyle.LINK, "https://Gtadictos21.com/discord").set_label("¡Haz click aquí!").add_to_container())
+
+    await ctx.bot.rest.kick_member(ctx.guild_id, ctx.author)
 
     await ctx.respond("https://tenor.com/view/troll-troll-face-ragememe-rageface-trolling-gif-4929853")
 
@@ -265,14 +311,15 @@ async def nopruebesestecomando(ctx):
 
     await channel.send(embed=embed)
 
+# BOTINFO COMMAND
 @plugin.command
-@lightbulb.command("botinfo", description="¡Muestra información acerca del bot!")
+@lightbulb.command("botinfo", description="¡Muestra información acerca del bot!", auto_defer=True)
 @lightbulb.implements(commands.SlashCommand)
 async def botinfo(ctx):
     embed = (
         hikari.Embed(
             title="Haz click para ver el codigo fuente",
-            url="https://github.com/Galo223344/Botadictos21/",
+            url="https://gtadictos21.com/Botadictos21",
             description="",
             colour=hikari.Colour(0x3B9DFF),
         )
@@ -316,9 +363,10 @@ async def botinfo(ctx):
     )
     await ctx.respond(embed)
 
+# MEMES COMMAND
 @plugin.command
 @lightbulb.option("subreddit", "Escoje un subreddit", hikari.OptionType.STRING,  modifier=commands.OptionModifier.CONSUME_REST, required=False)
-@lightbulb.command("memes", description="¡Diviertete viendo memes de Reddit!")
+@lightbulb.command("memes", description="¡Diviertete viendo memes de Reddit!", auto_defer=True)
 @lightbulb.implements(commands.SlashCommand)
 async def memes(ctx):
     if ctx.options.subreddit is None:
@@ -433,9 +481,10 @@ async def memes(ctx):
             )
             await ctx.respond(embed)
 
+# USERINFO COMMAND
 @plugin.command
 @lightbulb.option("usuario", "Seleciona a un usuario", hikari.OptionType.USER,  modifier=commands.OptionModifier.CONSUME_REST, required=False)
-@lightbulb.command("userinfo", description="¡Revisa la información sobre un usuario!")
+@lightbulb.command("userinfo", description="¡Revisa la información sobre un usuario!", auto_defer=True)
 @lightbulb.implements(commands.SlashCommand)
 async def userinfo(ctx):
     target_id = int(ctx.options.usuario) if ctx.options.usuario is not None else ctx.user.id
@@ -483,7 +532,7 @@ async def userinfo(ctx):
         .add_field(
             name=valor_1, 
             value=valor_2, 
-            inline=True
+            inline=True,
         )
         .add_field(
             name="Cuenta creada en:",
@@ -510,9 +559,10 @@ async def userinfo(ctx):
 
     await ctx.respond(embed)
 
+# AVATAR COMMAND
 @plugin.command
 @lightbulb.option("usuario", "Seleciona a un usuario", hikari.OptionType.USER,  modifier=commands.OptionModifier.CONSUME_REST, required=False)
-@lightbulb.command("avatar", description="¡Muestra tu avatar o el avatar de otro usuario!")
+@lightbulb.command("avatar", description="¡Muestra tu avatar o el avatar de otro usuario!", auto_defer=True)
 @lightbulb.implements(commands.SlashCommand)
 async def avatar(ctx):
     if ctx.options.usuario == None:
@@ -536,10 +586,11 @@ async def avatar(ctx):
 
     await ctx.respond(embed)
 
+# SAY COMMAND
 @plugin.command
 @lightbulb.option("texto", "Escribe el texto que quieras", hikari.OptionType.STRING, modifier=commands.OptionModifier.CONSUME_REST)
 @lightbulb.option("canal", "Seleciona el canal", hikari.OptionType.CHANNEL,  modifier=commands.OptionModifier.CONSUME_REST)
-@lightbulb.command("say", description="¡Habla como si fueras el bot!")
+@lightbulb.command("say", description="¡Habla como si fueras el bot!", auto_defer=True)
 @lightbulb.implements(commands.SlashCommand)
 async def say(ctx):
     if ctx.author.id not in bot_operators:
@@ -597,9 +648,9 @@ async def say(ctx):
 
     await ctx.respond(embed, flags=hikari.MessageFlag.EPHEMERAL)
 
-
+# SERVERINFO COMMAND
 @plugin.command
-@lightbulb.command("serverinfo", description="¡Muestra información del servidor!")
+@lightbulb.command("serverinfo", description="¡Muestra información del servidor!", auto_defer=True)
 @lightbulb.implements(commands.SlashCommand)
 async def serverinfo(ctx):
     guild = ctx.get_guild()
@@ -660,9 +711,10 @@ async def serverinfo(ctx):
 
     await ctx.respond(embed)
 
+# REGLAS COMMAND
 @plugin.command
 @lightbulb.option("canal", "Seleciona el canal", hikari.OptionType.CHANNEL,  modifier=commands.OptionModifier.CONSUME_REST)
-@lightbulb.command("reglas", description="¡Muestra las reglas del servidor!")
+@lightbulb.command("reglas", description="¡Muestra las reglas del servidor!", auto_defer=True)
 @lightbulb.implements(commands.SlashCommand)
 async def reglas(ctx):
     if ctx.author.id not in bot_operators:
@@ -797,11 +849,13 @@ async def reglas(ctx):
 
     await ctx.respond(embed, flags=hikari.MessageFlag.EPHEMERAL)
 
+# SUGERENCIAS COMMAND
 @plugin.command
 @lightbulb.option("texto", "Escribe tu sugerencia aquí", hikari.OptionType.STRING,  modifier=commands.OptionModifier.CONSUME_REST)
-@lightbulb.command("sugerencia", description="¡Envia una sugerencia!")
+@lightbulb.command("sugerencia", description="¡Envia una sugerencia!", auto_defer=True)
 @lightbulb.implements(commands.SlashCommand)
 async def sugerencia(ctx):
+
     if len(ctx.options.texto) > 4096:
         embed = (
             hikari.Embed(

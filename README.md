@@ -2,7 +2,7 @@
 
 ### Bot creado por [Gtadictos21](https://github.com/Gtadictos21) y [Galo](https://github.com/Galo223344) para el servidor de Discord: [El Club De Los 21's](https://gtadictos21.com/discord)
 
-Estado del proyecto: [En desarollo](https://discord.gg/XEVxMVWHTE) - Fecha final estipulada: Enero 2022
+Estado del proyecto: [En desarollo](https://discord.gg/XEVxMVWHTE) - Fecha final estipulada: Febrero 2022
 
 Este bot se beneficia de [Hikari](https://www.hikari-py.dev/) y [Lightbulb](https://hikari-lightbulb.readthedocs.io/en/latest/), dos librerias que se encuentran en constante crecimiento.
 

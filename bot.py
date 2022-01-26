@@ -5,14 +5,12 @@ import asyncio
 import random
 import json
 import time
-import pytz
 import psutil
 import hikari
 import lightbulb
 
 from colorama import Fore 
 from colorama import Style
-import motor.motor_asyncio
 from lightbulb import commands, context
 from tldextract import extract
 from datetime import datetime
@@ -21,9 +19,9 @@ from datetime import datetime
 with open("config.json") as f:
     data = json.load(f)
     token = data["discord-token"] # Token de Discord
-    MongoDB_URL = data["Mongodb"] # URL para conectarse a la base de datos de MongoDB
     guild_id = data["guild"] # ID de la guild
     statuschannel = data["statuschannel"] # ID del canal de status
+    partidas_channel = data["partidas-channel"] # ID del canal en el que se publican las partidas
 
     global bot_operators
     bot_operators = data["bot-operators"] # IDs de los operadores del bot (Acceso a cargar/descargar cogs y demas)
@@ -37,14 +35,11 @@ with open("config.json") as f:
     global logchannel
     logchannel = data["logchannel"] # Canal de Logs
 
-# Configuramos e iniciamos MongoDB
-client = motor.motor_asyncio.AsyncIOMotorClient(MongoDB_URL)
-print(f'{Fore.RED}[MONGODB INFO]{Fore.CYAN}¡La base de datos se ha conectado!{Style.RESET_ALL}')
-db = client['bot']
-spamlist = db['spamlist']
+    global SteamToken
+    SteamToken = data["steam-token"] # Steam API Token
 
-# Zona horaria
-tz = pytz.timezone('America/Argentina/Buenos_Aires')
+    global CyberusToken
+    CyberusToken = data["cyberus-token"] # Cyberus.dev API Token
 
 # Creamos la instacia del bot, y le pasamos el token, junto con otras configuraciones.
 bot = lightbulb.BotApp(
@@ -69,10 +64,8 @@ async def on_starting(event: hikari.StartingEvent) -> None:
 async def on_stopping(event: hikari.StoppingEvent) -> None:
     await bot.d.aio_session.close()
 
-# Cambios de status cada 10 segundos
-@bot.listen()
-async def on_bot_started(event: hikari.StartingEvent):
-    while True: 
+async def bot_status():
+    while True:
         await bot.update_presence(activity=hikari.Activity(type=hikari.ActivityType.WATCHING, name="a Gtadictos 21 | Usá /ayuda"))
         await asyncio.sleep(10)
         guild = bot.cache.get_guild(guild_id)
@@ -82,29 +75,29 @@ async def on_bot_started(event: hikari.StartingEvent):
         username = bot.cache.get_user(elegido_id)
         await bot.update_presence(activity=hikari.Activity(type=hikari.ActivityType.WATCHING, name=f"a {username} 👀 | Usá /ayuda"))
         await asyncio.sleep(10)
-        async with bot.d.aio_session.get("https://christmas-days.anvil.app/_/api/get_days") as res:
-            data = await res.json()
-            days = data['Days to Christmas']
-            await bot.update_presence(activity=hikari.Activity(type=hikari.ActivityType.WATCHING, name=f"a 🎅 ¡Solo {days} dias para navidad!"))
-            await asyncio.sleep(10)
 
-# Inicia el loop, e informa por la consola que el bot se encendio.
+# Crea el loop y avisa que se encendió.
 @bot.listen(hikari.StartedEvent)
-async def on_started(event: hikari.StartedEvent)-> None:
-    asyncio.create_task(on_bot_started(event))
+async def start_event(_event: hikari.StartedEvent):
+    # Iniciamos el loop de status.
+    asyncio.create_task(bot_status())
+
+    # Imprimimos en consola algunos datos sobre el bot y el servidor.
     disco = psutil.disk_usage('/')
     print(f'{Fore.RED}[BOT INFO]{Fore.CYAN}¡{bot.get_me().username} se ha conectado!{Style.RESET_ALL}')
     print(f'{Fore.RED}[BOT INFO]{Fore.CYAN}El ID del bot es: {Fore.MAGENTA}{bot.get_me().id}{Style.RESET_ALL}')
     print(f'{Fore.RED}[BOT INFO]{Fore.CYAN}Bot creado por: {Fore.MAGENTA}Gtadictos21 {Fore.CYAN}&{Fore.MAGENTA} Galo223344{Style.RESET_ALL}')
-    print(f'{Fore.RED}[BOT INFO]{Fore.CYAN}Repositorio oficial: {Fore.MAGENTA}https://github.com/galo223344/Botadictos21{Style.RESET_ALL}')
+    print(f'{Fore.RED}[BOT INFO]{Fore.CYAN}Repositorio oficial: {Fore.MAGENTA}https://gtadictos21.com/Botadictos21{Style.RESET_ALL}')
     print(f'{Fore.RED}[BOT INFO]{Fore.CYAN}ID de los operadores: {Fore.MAGENTA}{bot_operators}{Style.RESET_ALL}')
     print(f'{Fore.RED}[SERVER INFO]{Fore.CYAN}Uso de CPU: {Fore.MAGENTA}{psutil.cpu_percent()}%{Style.RESET_ALL}')
     print(f'{Fore.RED}[SERVER INFO]{Fore.CYAN}Uso de RAM: {Fore.MAGENTA}{math.ceil((psutil.virtual_memory()[3]/1024)/1024)}MB {Fore.CYAN}({Fore.MAGENTA}{psutil.virtual_memory()[2]}%{Fore.CYAN}){Style.RESET_ALL}')
     print(f'{Fore.RED}[SERVER INFO]{Fore.CYAN}Uso de disco: {Fore.MAGENTA}{round(math.ceil(((disco.used/1024)/1024))/1024)}GB{Fore.CYAN}/{Fore.MAGENTA}{round(math.ceil(((disco.total/1024)/1024))/1024)}GB {Fore.CYAN}({Fore.MAGENTA}{round(math.ceil(((disco.free/1024)/1024))/1024)}GB{Fore.CYAN}){Style.RESET_ALL}')
     print(f'{Fore.RED}[SERVER INFO]{Fore.CYAN}Ping: {Fore.MAGENTA}{round(bot.heartbeat_latency * 1000)}ms')
 
+    # Enviamos un embed al canal "statuschannel".
+    channel = bot.cache.get_guild_channel(statuschannel)
     start_time = time.time()
-    message = await bot.cache.get_guild_channel(statuschannel).send("API ping")
+    message = await bot.rest.create_message(channel, "API ping")
     end_time = time.time()
     await message.delete()
 
@@ -158,13 +151,20 @@ async def on_started(event: hikari.StartedEvent)-> None:
 ############################################
 
 @bot.command
-@lightbulb.command("ping", description="¡Revisa la latencia del bot!")
+@lightbulb.command("ping", description="¡Revisa la latencia del bot!", auto_defer=True)
 @lightbulb.implements(commands.SlashCommand)
 async def ping(ctx):
+
+    # API ping
     start_time = time.time()
     message = await bot.cache.get_guild_channel(logchannel).send("API ping")
     end_time = time.time()
     await message.delete()
+
+    # Report bot ping
+    start_time_api = time.time()
+    async with ctx.bot.d.aio_session.get("https://api.cyberus.dev/ping") as res:
+        end_time_api = time.time()
 
     embed = (
         hikari.Embed(
@@ -173,11 +173,16 @@ async def ping(ctx):
         .add_field(
             name="Bot ping:",
             value=f"{round(bot.heartbeat_latency * 1000)}ms",
-            inline=False,
+            inline=True,
         )
         .add_field(
             name="API ping:",
             value=f"{round((end_time - start_time) * 1000)}ms",
+            inline=True,
+        )
+        .add_field(
+            name="Report Bot ping:",
+            value=f"{round((end_time_api - start_time_api) * 1000)}ms",
             inline=False,
         )
         .set_footer(
@@ -188,99 +193,6 @@ async def ping(ctx):
 
     await ctx.respond(embed)
 
-@bot.command
-@lightbulb.option("link", "Selecciona el link a agregar", hikari.OptionType.STRING, modifier = commands.OptionModifier.CONSUME_REST)
-@lightbulb.command("add", description="¡Añade links maliciosos a la lista negra!")
-@lightbulb.implements(commands.SlashCommand)
-async def add(ctx):
-    if ctx.author.id not in bot_operators:
-        embed = (
-            hikari.Embed(
-                title="¡No tienes permisos para utilizar este comando!",
-                description="Necesitas contar con el permiso `BOT_OPERATOR`",
-                colour=hikari.Colour(0xff0000),
-            )
-            .set_footer(
-                text=f"Pedido por: {ctx.member.display_name}",
-                icon=ctx.member.avatar_url,
-            )
-        )
-
-        await ctx.respond(embed, flags=hikari.MessageFlag.EPHEMERAL)
-        return
-
-    tsd, td, tsu = extract(ctx.options.link) 
-    url = td + '.' + tsu
-
-    try:
-        fecha = datetime.now(tz).strftime("%d/%m/%Y %H:%M:%S")
-
-        spamurl = {
-        "_id": url,
-        "autor": ctx.author.id,
-        "fecha": fecha
-        }
-
-        await spamlist.insert_one(spamurl)
-        print(f'{Fore.RED}[BOT INFO]{Fore.WHITE}¡El link: \"{Fore.MAGENTA}{url}{Fore.WHITE}\" ha sido agregado a la lista de spam!{Style.RESET_ALL}')
-        
-        embed = (
-            hikari.Embed(
-                title="¡El link fue agregado a la lista de spam!",
-                description=f"Link agregado: \"{url}\"",
-                colour=hikari.Colour(0x2bff00),
-            )
-            .set_footer(
-                text=f"Pedido por: {ctx.member.display_name}",
-                icon=ctx.member.avatar_url,
-            )
-        )
-
-        await ctx.respond(embed)
-
-        bot.reload_extensions("cogs.spam")
-        print(f'{Fore.RED}[BOT INFO]{Fore.WHITE}¡El cog \"spam\" se ha recargado, ya que se ha utilizado el comando \"/add\"!{Style.RESET_ALL}')
-
-        channel = ctx.bot.cache.get_guild_channel(logchannel)
-        embed = (
-            hikari.Embed(
-                title=f"¡El administrador {ctx.author.username} agregó un nuevo link a la lista de spam:",
-                description = f"Link agregado: \"{url}\"",
-                colour=hikari.Colour(0xff6600),
-                timestamp=datetime.now().astimezone(),
-            )
-            .set_footer(
-                text=f"ID del usuario: {ctx.author.id}",
-                icon=ctx.author.avatar_url,
-            )
-            .set_thumbnail(ctx.author.avatar_url)
-        )
-
-        await channel.send(embed=embed)
-    
-    except:
-        encontrado = spamlist.find({},{'_id': url, 'autor': 1, 'fecha': 1, })
-        for data in await encontrado.to_list(length=100):
-            x = json.dumps(data)
-            y = json.loads(x)
-            author = y["autor"]
-            date = y["fecha"]
-        
-        embed = (
-            hikari.Embed(
-                title="¡Este link ya se encuentra en la lista negra!",
-                description=f"El administrador <@{author}> agregó el link el dia: {date}",
-                colour=hikari.Colour(0xff0000),
-            )
-            .set_footer(
-                text=f"Pedido por: {ctx.member.display_name}",
-                icon=ctx.member.avatar_url,
-            )
-        )
-
-        await ctx.respond(embed, flags=hikari.MessageFlag.EPHEMERAL)
-        return
-
 ############################################
 #
 #
@@ -290,8 +202,8 @@ async def add(ctx):
 ############################################
 
 @bot.command
-@lightbulb.option("extension", "¡Selecciona la extension a cargar!", hikari.OptionType.STRING, modifier = commands.OptionModifier.CONSUME_REST, choices=["misc", "spam"])
-@lightbulb.command("load", description="¡Carga una extension!")
+@lightbulb.option("extension", "¡Selecciona la extension a cargar!", hikari.OptionType.STRING, modifier = commands.OptionModifier.CONSUME_REST, choices=["fun", "misc", "moderacion", "reportbot", "spam"])
+@lightbulb.command("load", description="¡Carga una extension!", auto_defer=True)
 @lightbulb.implements(commands.SlashCommand)
 async def load(ctx):
     if ctx.author.id not in bot_operators:
@@ -362,8 +274,8 @@ async def load(ctx):
     await channel.send(embed=embed)
 
 @bot.command
-@lightbulb.option("extension", "¡Selecciona la extension a cargar!", hikari.OptionType.STRING, modifier = commands.OptionModifier.CONSUME_REST, choices=["misc", "spam"])
-@lightbulb.command("unload", description="¡Descarga una extension!")
+@lightbulb.option("extension", "¡Selecciona la extension a descargar!", hikari.OptionType.STRING, modifier = commands.OptionModifier.CONSUME_REST, choices=["fun", "misc", "moderacion", "reportbot", "spam"])
+@lightbulb.command("unload", description="¡Descarga una extension!", auto_defer=True)
 @lightbulb.implements(commands.SlashCommand)
 async def unload(ctx):
     if ctx.author.id not in bot_operators:
@@ -434,7 +346,7 @@ async def unload(ctx):
 
     await channel.send(embed=embed)
 
-@lightbulb.command("reload", "¡Recarga una extension!")
+@lightbulb.command("reload", "¡Recarga una extension!", auto_defer=True)
 @lightbulb.implements(commands.SlashCommandGroup)
 async def reload(ctx):
     embed =(
@@ -452,7 +364,7 @@ async def reload(ctx):
     await ctx.respond(embed, flags=hikari.MessageFlag.EPHEMERAL)
 
 @reload.child
-@lightbulb.command("all", "¡Recarga todas las extensiones!")
+@lightbulb.command("all", "¡Recarga todas las extensiones!", auto_defer=True)
 @lightbulb.implements(commands.SlashSubCommand)
 async def reload_all(ctx):
     if ctx.author.id not in bot_operators:
@@ -526,8 +438,8 @@ async def reload_all(ctx):
     await channel.send(embed=embed)
 
 @reload.child
-@lightbulb.option("extension", "¡Selecciona la extensión a recargar!", choices=["misc", "spam"])
-@lightbulb.command("one", "¡Recarga una extensión!")
+@lightbulb.option("extension", "¡Selecciona la extensión a recargar!", choices=["fun", "misc", "moderacion", "reportbot", "spam"])
+@lightbulb.command("one", "¡Recarga una extensión!", auto_defer=True)
 @lightbulb.implements(commands.SlashSubCommand)
 async def reload_one(ctx):
     if ctx.author.id not in bot_operators:

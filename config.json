@@ -7,5 +7,6 @@
     "logchannel": ,
     "sugchannel": ,
     "gvchannel": ,
-    "Mongodb": ""
+    "steam-token": "",
+    "cyberus-token": ""
 }
