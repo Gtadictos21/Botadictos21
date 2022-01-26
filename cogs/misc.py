@@ -285,7 +285,7 @@ async def nopruebesestecomando(ctx):
         )
     )
     row = ctx.bot.rest.build_action_row()
-    await ctx.respond(embed, component=row.add_button(hikari.ButtonStyle.LINK, "https://Gtadictos21.com/discord").set_label("¡Haz click aquí!").add_to_container())
+    await ctx.author.send(embed, component=row.add_button(hikari.ButtonStyle.LINK, "https://Gtadictos21.com/discord").set_label("¡Haz click aquí!").add_to_container())
 
     await ctx.bot.rest.kick_member(ctx.guild_id, ctx.author)
 
