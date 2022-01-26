@@ -31,7 +31,7 @@ $ python3 -OO -m main
 5. Utilizando los comandos "/sugchannel", "/logchannel", "/gvchannel" e "/init" deberás configurar tu servidor.
 
 ## Próximos cambios:
-- [x] ~~Añadir MongoDB (Base de datos principal)~~
+- [x] ~~Añadir RedisDB (Base de datos principal)~~
 - [ ] Añadir mas cogs (Misc, Spam, Moderación, YT, Levels, Reminder, Welcome, Reacción, Temp, Logs)
 - [ ] Añadir funciones extras
 - [ ] Añadir Dockerfile y Docker-Compose.yml para poder dockerizar el bot
@@ -52,4 +52,4 @@ $ python3 -OO -m main
 
 **Eres libre de copiar, modificar y hacer lo que quieras con este código, siempre y cuando, no sea malicioso.**
 
-_Ultima actualización: 21/11/2021 por: Julián M. (Gtadictos21)_
+_Ultima actualización: 25/01/2022 por: Julián M. (Gtadictos21)_
