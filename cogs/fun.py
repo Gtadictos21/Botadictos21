@@ -7,7 +7,7 @@ from lightbulb import commands
 
 plugin = lightbulb.Plugin("Misc")
 
-pitos = ["8=D", "8==D", "8===D", "8====D", "8=====D", "8======D", "8=======D", "8============D"]
+# pitos = ["8=D", "8==D", "8===D", "8====D", "8=====D", "8======D", "8=======D", "8============D"]
 respuestas = ["Si", "No", "Quizás", "Pregunta mas tarde", "Oops! Mi CPU se calentó demasiado", "Se amable la proxima vez", "No lo sé", "Utiliza `/nopruebesestecomando` y averigualo", "Preguntale a <@388924384016072706>", "Creo que no te gustará la respuesta..."]
 
 @lightbulb.command("fun", "¡Este comando es divertido!", auto_defer=True)
@@ -32,7 +32,8 @@ async def fun(ctx):
 @lightbulb.command("banana", "¿Cuanto mide tu banana?", auto_defer=True)
 @lightbulb.implements(commands.SlashSubCommand)
 async def fun_banana(ctx):
-    await ctx.respond(f"La banana de {ctx.author.mention} mide: `{random.choice(pitos)}`")
+    random.seed(ctx.author.id)
+    await ctx.respond(f"La banana de {ctx.author.mention} mide: `8{'='*random.randint(1,15)}D`")
 
 # CHICAHOT COMMAND
 @fun.child

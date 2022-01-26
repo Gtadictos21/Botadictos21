@@ -14,6 +14,7 @@ from colorama import Style
 from lightbulb import commands, context
 from tldextract import extract
 from datetime import datetime
+lista_cogs = None
 
 # Cargamos el archivo config.json
 with open("config.json") as f:
@@ -81,6 +82,8 @@ async def bot_status():
 async def start_event(_event: hikari.StartedEvent):
     # Iniciamos el loop de status.
     asyncio.create_task(bot_status())
+
+    lista_cogs = [i[:-3] for i in os.listdir('./cogs') if i.endswith('.py')]
 
     # Imprimimos en consola algunos datos sobre el bot y el servidor.
     disco = psutil.disk_usage('/')
@@ -202,7 +205,7 @@ async def ping(ctx):
 ############################################
 
 @bot.command
-@lightbulb.option("extension", "¡Selecciona la extension a cargar!", hikari.OptionType.STRING, modifier = commands.OptionModifier.CONSUME_REST, choices=["fun", "misc", "moderacion", "reportbot", "spam"])
+@lightbulb.option("extension", "¡Selecciona la extension a cargar!", hikari.OptionType.STRING, modifier = commands.OptionModifier.CONSUME_REST, choices=lista_cogs)
 @lightbulb.command("load", description="¡Carga una extension!", auto_defer=True)
 @lightbulb.implements(commands.SlashCommand)
 async def load(ctx):
@@ -223,6 +226,7 @@ async def load(ctx):
         await ctx.respond(embed, flags=hikari.MessageFlag.EPHEMERAL)
         return
     try:
+        lista_cogs = [i[:-3] for i in os.listdir('./cogs') if i.endswith('.py')]
         bot.load_extensions(f"cogs.{ctx.options.extension}")
     except Exception as err:
         embed = (
@@ -274,7 +278,7 @@ async def load(ctx):
     await channel.send(embed=embed)
 
 @bot.command
-@lightbulb.option("extension", "¡Selecciona la extension a descargar!", hikari.OptionType.STRING, modifier = commands.OptionModifier.CONSUME_REST, choices=["fun", "misc", "moderacion", "reportbot", "spam"])
+@lightbulb.option("extension", "¡Selecciona la extension a descargar!", hikari.OptionType.STRING, modifier = commands.OptionModifier.CONSUME_REST, choices=lista_cogs)
 @lightbulb.command("unload", description="¡Descarga una extension!", auto_defer=True)
 @lightbulb.implements(commands.SlashCommand)
 async def unload(ctx):
@@ -296,6 +300,7 @@ async def unload(ctx):
         return
 
     try:
+        lista_cogs = [i[:-3] for i in os.listdir('./cogs') if i.endswith('.py')]
         bot.unload_extensions(f"cogs.{ctx.options.extension}")
     except Exception as err:
         embed = (
@@ -385,6 +390,7 @@ async def reload_all(ctx):
         return
     
     try:
+        lista_cogs = [i[:-3] for i in os.listdir('./cogs') if i.endswith('.py')]
         for filename in os.listdir('./cogs'):
             if filename.endswith('.py'):
                 bot.reload_extensions(f"cogs.{filename[:-3]}")
@@ -438,7 +444,7 @@ async def reload_all(ctx):
     await channel.send(embed=embed)
 
 @reload.child
-@lightbulb.option("extension", "¡Selecciona la extensión a recargar!", choices=["fun", "misc", "moderacion", "reportbot", "spam"])
+@lightbulb.option("extension", "¡Selecciona la extensión a recargar!", choices=lista_cogs)
 @lightbulb.command("one", "¡Recarga una extensión!", auto_defer=True)
 @lightbulb.implements(commands.SlashSubCommand)
 async def reload_one(ctx):
@@ -460,6 +466,7 @@ async def reload_one(ctx):
         return
     
     try:
+        lista_cogs = [i[:-3] for i in os.listdir('./cogs') if i.endswith('.py')]
         bot.reload_extensions(f"cogs.{ctx.options.extension}")
     except Exception as err:
         embed = (
