@@ -12,6 +12,8 @@ from bot import hetrix_token
 from bot import partidas_channel
 
 from uptime import uptime
+from colorama import Fore 
+from colorama import Style
 from lightbulb import commands
 from datetime import datetime, date
 from hikari.impl import ActionRowBuilder
@@ -285,7 +287,11 @@ async def nopruebesestecomando(ctx):
         )
     )
     row = ctx.bot.rest.build_action_row()
-    await ctx.author.send(embed, component=row.add_button(hikari.ButtonStyle.LINK, "https://Gtadictos21.com/discord").set_label("¡Haz click aquí!").add_to_container())
+    try:
+        await ctx.author.send(embed, component=row.add_button(hikari.ButtonStyle.LINK, "https://Gtadictos21.com/discord").set_label("¡Haz click aquí!").add_to_container())
+    
+    except:
+        print(f'{Fore.RED}[BOT INFO]{Fore.WHITE}¡El usuario {ctx.author} ha sido trolleado, pero no se le ha podido enviar un mensaje para que re-ingrese!{Style.RESET_ALL}')
 
     await ctx.bot.rest.kick_member(ctx.guild_id, ctx.author)
 
